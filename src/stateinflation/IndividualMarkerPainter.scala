@@ -1,5 +1,6 @@
 package stateinflation
 
+import java.awt.Graphics
 import java.awt.geom.Rectangle2D
 import javax.swing.JComponent
 
@@ -12,30 +13,33 @@ import marker.Marker
   * Created by runed on 11/25/2016.
   */
 class IndividualMarkerPainter{
-  def drawBackground(editor: Editor, backgroundColor: JBColor, textColor: JBColor, marker: Marker, canvas: JComponent): Unit = {
-    val graphics = canvas.getGraphics
+  def drawBackground(editor: Editor, backgroundColor: JBColor, textColor: JBColor, marker: Marker, markerPanel: JComponent, graphics: Graphics): Unit = {
+    // TODO: Painting the markers on the editor content component rather than the expected canvas
+    val markerPanel = editor.getContentComponent
     val font = editor.getColorsScheme.getFont(EditorFontType.BOLD)
-    val fontRect: Rectangle2D = canvas.getFontMetrics(font).getStringBounds(marker.searchText, graphics)
+    val fontRect: Rectangle2D = markerPanel.getFontMetrics(font).getStringBounds(marker.searchText, graphics)
     graphics.setColor(backgroundColor)
-    val x = canvas.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
-    val y = canvas.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
+    graphics.setFont(font)
+    val x = markerPanel.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
+    val y = markerPanel.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
     graphics.fillRect(x.toInt,y.toInt,fontRect.getWidth.toInt, fontRect.getHeight.toInt)
     if(marker.searchText.length > 1){
       graphics.setColor(textColor)
-      val x_text = canvas.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset+1)).getX
-      val y_text = canvas.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
+      val x_text = markerPanel.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset+1)).getX
+      val y_text = markerPanel.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
       val bottomYOfMarkerChar = y_text + font.getSize
       graphics.drawString(marker.searchText.substring(1), x_text.toInt, bottomYOfMarkerChar.toInt)
     }
   }
 
-  def drawMarkerChar(editor: Editor, marker: Marker, textColor: JBColor, canvas: JComponent): Unit = {
-    val graphics = canvas.getGraphics
+  def drawMarkerChar(editor: Editor, marker: Marker, textColor: JBColor, markerPanel: JComponent, graphics: Graphics): Unit = {
+    val markerPanel = editor.getContentComponent
     val font = editor.getColorsScheme.getFont(EditorFontType.BOLD)
-    val x = canvas.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
-    val y = canvas.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
+    val x = markerPanel.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
+    val y = markerPanel.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.endOffset)).getY
     val bottomYOfMarkerChar = y + font.getSize
     graphics.setColor(textColor)
+    graphics.setFont(font)
     graphics.drawString(marker.replacementText, x.toInt, bottomYOfMarkerChar.toInt)
   }
 }

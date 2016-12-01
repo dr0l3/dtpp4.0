@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
   * Created by runed on 11/27/2016.
   */
 class SimpleMarkerCalculatorStrategy extends MarkerCalculatorStrategy{
-  val markerset = "asdfwerhjkltcvbyuiopågæøxnmz"
+  val markerset: String = "asdfwerhjkltcvbyuiopågæøxnmz".toUpperCase
   override def calculateMarkers(editor: Editor, searchText: String, contextPoint: Int): List[Marker] = {
     if(searchText.equals("")){
       return List()

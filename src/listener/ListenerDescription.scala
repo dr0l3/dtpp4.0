@@ -6,5 +6,5 @@ import listener.ListenerType.ListenerType
   * Created by runed on 11/27/2016.
   */
 trait ListenerDescription {
-  def getType(): ListenerType
+  def listenerType: ListenerType
 }

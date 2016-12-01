@@ -1,8 +1,8 @@
-<idea-plugin version="2">
+<idea-plugin version="4">
   <id>com.drole.tours.scale.dtpp.4</id>
-  <name>Scala Dev</name>
-  <version>1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+  <name>Scala DTPP</name>
+  <version>4.0</version>
+  <vendor email="runedrolepedersen@gmail.com" url="http://drole.rocks">DroleTours</vendor>
 
   <description><![CDATA[
       Enter short description for your plugin here.<br>
@@ -31,8 +31,14 @@
   <actions>
     <!-- Add your actions here -->
     <action class="action.ActionExample" id="exampleScalaAction">
-      <keyboard-shortcut first-keystroke="ctrl h" keymap="ctrl h"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl k"/>
     </action>
+
+    <action id="jumpToTarget4.0" class="action.ActionExample" text="Jump to target"
+            description="">
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl g" second-keystroke="ctrl g"/>
+    </action>
+
   </actions>
 
 </idea-plugin>

@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import listener.ScrollDirection.ScrollDirection
 import listener._
 import marker.{Marker, MarkerCalculatorStrategy, MarkerType, SimpleMarkerCalculatorStrategy}
+import overlay.{JumpActionStrategy, OneOverlayStrategy, OverlayStrategy}
 import popup.TextPopup
 import state.PluginState
 import stateinflation.SimpleStateInflator
@@ -19,9 +20,11 @@ class ActionExample extends AnAction with InputAcceptor{
   val stateInflator : SimpleStateInflator = new SimpleStateInflator(new PluginState(), None)
   var editorOption: Option[Editor] = None
   val markerCalculatorStrategy: MarkerCalculatorStrategy = new SimpleMarkerCalculatorStrategy
+  val overlayStrategy: OverlayStrategy = new OneOverlayStrategy(new JumpActionStrategy)
 
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
     // TODO: create listeners
+    println("Starting action")
     editorOption = Some(anActionEvent.getData(CommonDataKeys.EDITOR))
     stateInflator.editor = editorOption
     calculateStartState(None)
@@ -43,10 +46,12 @@ class ActionExample extends AnAction with InputAcceptor{
           handleUndo()
         }
       case InputType.Char =>
+
         if(input.value.isEmpty){
           return
         }
         val inputString = input.value.get
+        println("inputstring = {}", inputString)
         if(actionStates.last.isSelecting){
           handleSelect(inputString)
         } else {
@@ -80,20 +85,38 @@ class ActionExample extends AnAction with InputAcceptor{
 
   def handleUndo(): Unit = {
     //pop and paint the last actionstate
-    actionStates = actionStates.dropRight(1)
-    stateInflator.inflateState(actionStates.last, editorOption.getOrElse(return), this)
+    if(editorOption.isEmpty){
+      return
+    }
+    actionStates.length match {
+      case 1 =>
+        stateInflator.deflateState(editorOption.get)
+      case _ =>
+        actionStates = actionStates.dropRight(1)
+        stateInflator.inflateState(actionStates.last, editorOption.getOrElse(return), this)
+    }
   }
 
   def handleSelect(string: String): Unit ={
-    //find the selected marker
-    //use overlay strategy to decide next action
+    if(editorOption.isEmpty){
+      return
+    }
+
+    println("Handling select for character {}", string)
+    actionStates = actionStates ::: overlayStrategy.handleSelect(string, actionStates.last, editorOption.get)
+    stateInflator.inflateState(actionStates.last, editorOption.get, this)
+
   }
 
   def handleSetSelecting(): Unit ={
+    if(editorOption.isEmpty){
+      return
+    }
     //save state
     val currentState = actionStates.last
     //compute new state
     actionStates = actionStates ::: List(new PluginState(currentState.popup, currentState.markerList, currentState.selectedMarkers, true, currentState.listenerList))
+    stateInflator.inflateState(actionStates.last, editorOption.get, this)
   }
 
   def handleUpdateMarkers(string: String): Unit ={
@@ -101,11 +124,14 @@ class ActionExample extends AnAction with InputAcceptor{
     if(editorOption.isEmpty){
       return
     }
-    val markers = markerCalculatorStrategy.calculateMarkers(editorOption.get,string).map(marker => Some(marker))
+    val currentCaretPosition = editorOption.get.getCaretModel.getPrimaryCaret.getOffset
+    val markers = markerCalculatorStrategy.calculateMarkers(editorOption.get,string, currentCaretPosition).map(marker => Some(marker))
     val currentState = actionStates.last
 
-    actionStates = actionStates.dropRight(1) ::: List(new PluginState(currentState.popup, markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList))
+    actionStates = actionStates.dropRight(1) ::: List(new PluginState(new TextPopup(true, string), markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList))
     stateInflator.inflateState(actionStates.last,editorOption.get, this)
+    stateInflator.invalidate()
+    stateInflator.repaint()
   }
 
   def handleWidenMarkerNet(): Unit ={

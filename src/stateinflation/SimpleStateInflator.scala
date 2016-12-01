@@ -1,51 +1,80 @@
 package stateinflation
 
 import java.awt.{Graphics, Rectangle}
-import javax.swing.{JPanel, JTextField}
+import javax.swing.{JComponent, JPanel, JTextField}
 
-import action.InputAcceptor
+import action.{ActionExample, DummyInputAcceptor, InputAcceptor}
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import listener._
 import state.PluginState
-import scala.collection.JavaConversions._
 
+import scala.collection.JavaConverters.asScalaBuffer
 /**
   * Created by runed on 11/26/2016.
   */
-class SimpleStateInflator(var currentState: PluginState, var editor: Option[Editor]) extends JPanel with StateInflator with StateDeflator{
+class SimpleStateInflator(var currentState: PluginState, var editor: Option[Editor]) extends JComponent with StateInflator with StateDeflator{
+  var addedToComponent: Boolean = false
+  var textField: JTextField = new JTextField()
+  // TODO: Omfg fix ugliness
+  var updateListener: UpdateMarkersCharListener = new UpdateMarkersCharListener(textField, new DummyInputAcceptor)
+  var selectListener: SelectMarkersCharListener = new SelectMarkersCharListener(textField, new DummyInputAcceptor)
   def inflateState(state: PluginState, editor: Editor, action: InputAcceptor): Unit = {
+    println("Inflating state")
     //create the popup
     state.popup.visible  match {
-      case true  => createPopup(state.popup.text, state.popup.visible, editor, state.listenerList, action)
+      case true  => createPopup(state.popup.text, !state.isSelecting, editor, state.listenerList, action)
       case false  => disposePopup(editor)
     }
 
     currentState = state
-    paint(editor.getContentComponent.getGraphics)
+    if(!addedToComponent){
+      println("adding stuff to component")
+      editor.getContentComponent.add(this)
+      addedToComponent = true
+      paint(editor.getContentComponent.getGraphics)
+    }
   }
 
-  override def paint(g: Graphics): Unit = {
+  override def paint(graphics: Graphics): Unit = {
+//    println("Paint the stateinflator")
     setupLocationAndBoundsOfPanel(editor.getOrElse(return))
     //paint the markers
     val individualMarkerPainter = new IndividualMarkerPainter()
     // TODO: Constructor parameter
     val markerPaintStrategy = new SimpleMarkerPaintStrategy()
+    markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor.getOrElse(return), individualMarkerPainter, this, graphics)
+  }
 
-    markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor.getOrElse(return), individualMarkerPainter, this)
+  override def update(g: Graphics): Unit = {
+    println("Updating the stateinflator")
   }
 
   private def setupLocationAndBoundsOfPanel(editor: Editor): Unit = {
     val parent = editor.getContentComponent
     this.setLocation(0, 0)
+    this.invalidate()
     val visibleArea: Rectangle = editor.getScrollingModel.getVisibleAreaOnScrollingFinished
-    val x: Int = (parent.getLocation.getX + visibleArea.getX + editor.getScrollingModel.getHorizontalScrollOffset).toInt
+    val x: Int = (parent.getLocation().getX + visibleArea.getX + editor.getScrollingModel.getHorizontalScrollOffset).toInt
     this.setBounds(x, visibleArea.getY.toInt, visibleArea.getWidth.toInt, visibleArea.getHeight.toInt)
   }
 
   private def createPopup(text: String, editable: Boolean, editor: Editor, listeners: List[ListenerDescription], action: InputAcceptor): Unit = {
+    def updatePopup(text: String, editable: Boolean) = {
+      // TODO: Ugly hack. Think about different solution
+      textField.setEditable(editable)
+      if (editable){
+        selectListener.unregister()
+        updateListener = new UpdateMarkersCharListener(textField, action)
+        updateListener.register()
+      } else {
+        updateListener.unregister()
+        selectListener = new SelectMarkersCharListener(textField, action)
+        selectListener.register()
+      }
+    }
     def inflatePopup(text: String, editable: Boolean, editor: Editor, listeners: List[ListenerDescription], action: InputAcceptor): Unit ={
-      val textField = new JTextField()
+      textField = new JTextField()
       textField.setColumns(10)
       textField.setEditable(editable)
       textField.setText(text)
@@ -54,9 +83,13 @@ class SimpleStateInflator(var currentState: PluginState, var editor: Option[Edit
 
       new NonCharListener(textField, action).register()
       if (editable){
-        new UpdateMarkersCharListener(textField, action).register()
+        selectListener.unregister()
+        updateListener = new UpdateMarkersCharListener(textField, action)
+        updateListener.register()
       } else {
-        new SelectMarkersCharListener(textField, action).register()
+        updateListener.unregister()
+        selectListener = new SelectMarkersCharListener(textField, action)
+        selectListener.register()
       }
 
       val popup = JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
@@ -72,8 +105,8 @@ class SimpleStateInflator(var currentState: PluginState, var editor: Option[Edit
     }
     JBPopupFactory.getInstance().isChildPopupFocused(editor.getContentComponent) match {
       case true =>
-        JBPopupFactory.getInstance().getChildFocusedPopup(editor.getContentComponent).dispose()
-        inflatePopup(text,editable,editor,listeners, action)
+        // TODO: check wheter it is actually the correct popup
+        updatePopup(text, editable)
       case false =>
         inflatePopup(text,editable,editor,listeners, action)
     }
@@ -84,10 +117,9 @@ class SimpleStateInflator(var currentState: PluginState, var editor: Option[Edit
   }
 
   override def deflateState(editor: Editor): Unit = {
-    def disposePopup(editor: Editor): Unit ={
-
-    }
+    println("deflating stateinflator")
     editor.getContentComponent.remove(this)
+    addedToComponent = false
     val popups = asScalaBuffer(JBPopupFactory.getInstance().getChildPopups(editor.getContentComponent))
     popups.foreach(popup => popup.dispose())
   }
