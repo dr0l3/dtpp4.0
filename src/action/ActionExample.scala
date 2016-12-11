@@ -1,13 +1,11 @@
 package action
 
-import javafx.print.Printer.MarginType
-
 import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKeys}
 import com.intellij.openapi.editor.Editor
 import listener.ScrollDirection.ScrollDirection
 import listener._
-import marker.{Marker, MarkerCalculatorStrategy, MarkerType, SimpleMarkerCalculatorStrategy}
-import overlay.{JumpActionStrategy, OneOverlayStrategy, OverlayStrategy}
+import marker.{Marker, MarkerCalculatorStrategy, MarkerType}
+import overlay.OverlayStrategy
 import popup.TextPopup
 import state.PluginState
 import stateinflation.SimpleStateInflator
@@ -15,12 +13,9 @@ import stateinflation.SimpleStateInflator
 /**
   * Created by runed on 11/25/2016.
   */
-class ActionExample extends AnAction with InputAcceptor{
+class ActionExample(val stateInflator: SimpleStateInflator, val overlayStrategy: OverlayStrategy, val markerCalculatorStrategy: MarkerCalculatorStrategy) extends AnAction with InputAcceptor{
   var actionStates : List[PluginState] = List[PluginState]()
-  val stateInflator : SimpleStateInflator = new SimpleStateInflator(new PluginState(), None)
   var editorOption: Option[Editor] = None
-  val markerCalculatorStrategy: MarkerCalculatorStrategy = new SimpleMarkerCalculatorStrategy
-  val overlayStrategy: OverlayStrategy = new OneOverlayStrategy(new JumpActionStrategy)
 
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
     // TODO: create listeners
@@ -31,6 +26,9 @@ class ActionExample extends AnAction with InputAcceptor{
   }
 
   def handleInput(input: Input): Unit = {
+    if(actionStates.last.listenerList.map(ld => ld.listenerType).contains(ListenerType.NonAccept) && input.inputType != InputType.Escape){
+      handleExitAction()
+    }
     // TODO: DispatchStrategy
     input.inputType match {
       case InputType.Enter =>
@@ -81,6 +79,7 @@ class ActionExample extends AnAction with InputAcceptor{
       return
     }
     stateInflator.deflateState(editorOption.get)
+    actionStates = actionStates.drop(actionStates.size)
   }
 
   def handleUndo(): Unit = {
@@ -97,12 +96,17 @@ class ActionExample extends AnAction with InputAcceptor{
     }
   }
 
+  def isEnterKeypress(string: String): Boolean = {
+    string == "" || string == "\r" || string == "\r\n" || string == "\n"
+  }
+
   def handleSelect(string: String): Unit ={
-    if(editorOption.isEmpty){
+    if(editorOption.isEmpty || isEnterKeypress(string)){
+      println("Empty input or enter")
       return
     }
 
-    println("Handling select for character {}", string)
+    println(s"Handling select for character $string")
     actionStates = actionStates ::: overlayStrategy.handleSelect(string, actionStates.last, editorOption.get)
     stateInflator.inflateState(actionStates.last, editorOption.get, this)
 

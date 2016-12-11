@@ -27,6 +27,10 @@ class SimpleStateInflator(var currentState: PluginState, var editor: Option[Edit
       case false  => disposePopup(editor)
     }
 
+    if(state.listenerList.map(ld => ld.listenerType).contains(ListenerType.NonAccept)){
+      new NonAccept(action, editor).register()
+    }
+
     currentState = state
     if(!addedToComponent){
       println("adding stuff to component")

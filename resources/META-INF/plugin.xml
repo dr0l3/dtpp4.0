@@ -30,13 +30,8 @@
 
   <actions>
     <!-- Add your actions here -->
-    <action class="action.ActionExample" id="exampleScalaAction">
+    <action class="action.JumpAction" id="exampleScalaAction">
       <keyboard-shortcut keymap="$default" first-keystroke="ctrl k"/>
-    </action>
-
-    <action id="jumpToTarget4.0" class="action.ActionExample" text="Jump to target"
-            description="">
-      <keyboard-shortcut keymap="$default" first-keystroke="ctrl g" second-keystroke="ctrl g"/>
     </action>
 
   </actions>

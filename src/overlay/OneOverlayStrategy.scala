@@ -12,10 +12,9 @@ class OneOverlayStrategy(val actionStrategy: ActionStrategy) extends OverlayStra
   override def handleSelect(selectedMarkerString: String, pluginState: PluginState, editor: Editor): List[PluginState] = {
 
     pluginState.markerList.foreach(marker => println(marker.get.replacementText))
-    val list = pluginState.markerList.filter(markerOpt => markerOpt.get.replacementText.toLowerCase.eq(selectedMarkerString.toLowerCase))
+    val list = pluginState.markerList.filter(markerOpt => markerOpt.get.replacementText.toLowerCase == selectedMarkerString.toLowerCase)
     list.size match {
       case 1 =>
-        // TODO: This does not work. Doesnt jump and popup stays
         val selectedMarker: Option[Marker] = list.head
         actionStrategy.performAction(editor,selectedMarker.get.startOffset)
         List(new PluginState(new TextPopup(false, ""), List(), pluginState.selectedMarkers ::: List(selectedMarker), false, List(new SimpleListenerDescription(ListenerType.NonAccept))))
