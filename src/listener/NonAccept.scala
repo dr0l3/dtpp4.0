@@ -13,16 +13,14 @@ class NonAccept(val actionExample: InputAcceptor, val editor: Editor) extends Ke
   private var counter: Int = 0
   override def keyTyped(e: KeyEvent): Unit = {
     counter = counter +1
-    if(counter <= 1){
-      return
-    }
     if(e.getKeyChar == '\u001B'){
       actionExample.handleInput(new Input(InputType.Escape, None, List(None)))
-    } else {
+      unregister()
+    } else if (counter > 2) {
       //We only really care that it is not an escape input
       actionExample.handleInput(new Input(InputType.Char, None, List(None)))
+      unregister()
     }
-    unregister()
   }
 
   override def keyPressed(e: KeyEvent): Unit = {

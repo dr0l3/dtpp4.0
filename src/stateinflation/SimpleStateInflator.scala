@@ -13,12 +13,13 @@ import scala.collection.JavaConverters.asScalaBuffer
 /**
   * Created by runed on 11/26/2016.
   */
-class SimpleStateInflator(var currentState: PluginState, var editor: Option[Editor]) extends JComponent with StateInflator with StateDeflator{
+class SimpleStateInflator(var currentState: PluginState, val editor: Editor) extends JComponent with StateInflator with StateDeflator{
   var addedToComponent: Boolean = false
   var textField: JTextField = new JTextField()
   // TODO: Omfg fix ugliness
   var updateListener: UpdateMarkersCharListener = new UpdateMarkersCharListener(textField, new DummyInputAcceptor)
   var selectListener: SelectMarkersCharListener = new SelectMarkersCharListener(textField, new DummyInputAcceptor)
+
   def inflateState(state: PluginState, editor: Editor, action: InputAcceptor): Unit = {
     println("Inflating state")
     //create the popup
@@ -38,16 +39,17 @@ class SimpleStateInflator(var currentState: PluginState, var editor: Option[Edit
       addedToComponent = true
       paint(editor.getContentComponent.getGraphics)
     }
+    repaint()
   }
 
   override def paint(graphics: Graphics): Unit = {
 //    println("Paint the stateinflator")
-    setupLocationAndBoundsOfPanel(editor.getOrElse(return))
+    setupLocationAndBoundsOfPanel(editor)
     //paint the markers
     val individualMarkerPainter = new IndividualMarkerPainter()
     // TODO: Constructor parameter
     val markerPaintStrategy = new SimpleMarkerPaintStrategy()
-    markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor.getOrElse(return), individualMarkerPainter, this, graphics)
+    markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor, individualMarkerPainter, this, graphics)
   }
 
   override def update(g: Graphics): Unit = {

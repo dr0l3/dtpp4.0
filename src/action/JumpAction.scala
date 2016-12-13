@@ -1,8 +1,9 @@
 package action
 
-import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent}
+import Util.EditorUtil
+import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKeys}
 import marker.SimpleMarkerCalculatorStrategy
-import overlay.{JumpActionStrategy, OneOverlayStrategy}
+import overlay.OneOverlayStrategy
 import state.PluginState
 import stateinflation.SimpleStateInflator
 
@@ -10,8 +11,9 @@ import stateinflation.SimpleStateInflator
   * Created by runed on 12/11/2016.
   */
 class JumpAction extends AnAction{
-  val innerAction: ActionExample = new ActionExample(new SimpleStateInflator(new PluginState(), None), new OneOverlayStrategy(new JumpActionStrategy), new SimpleMarkerCalculatorStrategy)
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
-    innerAction.actionPerformed(anActionEvent)
+    val editor = anActionEvent.getData(CommonDataKeys.EDITOR)
+    new ActionExample(editor, new SimpleStateInflator(new PluginState(), editor), OneOverlayStrategy(EditorUtil.performMove), new SimpleMarkerCalculatorStrategy)
+      .actionPerformed(anActionEvent)
   }
 }
