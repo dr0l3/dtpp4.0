@@ -34,6 +34,10 @@
       <keyboard-shortcut keymap="$default" first-keystroke="ctrl k"/>
     </action>
 
+    <action class="action.CutAction" id="cutBetweenStuffScala">
+      <keyboard-shortcut first-keystroke="ctrl g" keymap="ctrl x"/>
+    </action>
+
   </actions>
 
 </idea-plugin>

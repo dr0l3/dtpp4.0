@@ -18,6 +18,14 @@ import java.util.stream.Collectors;
  * Created by runed on 11/27/2016.
  */
 public class EditorUtil {
+    public static int getCurrentPosition(Editor editor){
+        return editor.getCaretModel().getPrimaryCaret().getOffset();
+    }
+
+    public static String getTextBetweenOffsets(int startOffset, int endOffset, Editor editor){
+        return editor.getDocument().getText(new TextRange(startOffset, endOffset));
+    }
+
     public static void performScrollByLinenumber(Editor editor, int linesToMove){
         VisualPosition pos = editor.getCaretModel().getCurrentCaret().getLogicalPosition().toVisualPosition();
         int linenumber = ((pos.getLine() + linesToMove) > 0) ? (pos.getLine() + linesToMove) : 0;

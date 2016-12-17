@@ -2,8 +2,9 @@ package action
 
 import Util.EditorUtil
 import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKeys}
+import com.intellij.openapi.editor.Editor
 import marker.SimpleMarkerCalculatorStrategy
-import overlay.OneOverlayStrategy
+import overlay.{OneOverlayStrategy, SingleOffsetUndoFuncCreator}
 import state.PluginState
 import stateinflation.SimpleStateInflator
 
@@ -13,7 +14,15 @@ import stateinflation.SimpleStateInflator
 class JumpAction extends AnAction{
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
     val editor = anActionEvent.getData(CommonDataKeys.EDITOR)
-    new ActionExample(editor, new SimpleStateInflator(new PluginState(), editor), OneOverlayStrategy(EditorUtil.performMove), new SimpleMarkerCalculatorStrategy)
+    new ActionExample(
+      editor,
+      new SimpleStateInflator(new PluginState(), editor),
+      OneOverlayStrategy(
+        SingleOffsetUndoFuncCreator(
+          (offset: Int, editor: Editor) => EditorUtil.performMove(offset,editor),
+          (editor: Editor) => EditorUtil.getCurrentPosition(editor),
+          (offset: Int, editor: Editor) => () => EditorUtil.performMove(offset, editor))),
+      new SimpleMarkerCalculatorStrategy)
       .actionPerformed(anActionEvent)
   }
 }

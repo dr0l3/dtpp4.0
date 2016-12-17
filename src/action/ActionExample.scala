@@ -44,9 +44,9 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
 
   def calculateStartState(selectedMarker : Option[Marker]): Unit = {
     if(actionStates.isEmpty){
-      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, ""),List[Option[Marker]](), List[Option[Marker]](), false, List[ListenerDescription]()))
+      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), List[Option[Marker]](), false, List[ListenerDescription](), () => Unit))
     } else {
-      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, ""),List[Option[Marker]](), actionStates.last.selectedMarkers ::: List[Option[Marker]](), false, List[ListenerDescription]()))
+      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), actionStates.last.selectedMarkers ::: List[Option[Marker]](), false, List[ListenerDescription](), () => Unit))
     }
     stateInflator.inflateState(actionStates.last, editor, this)
   }
@@ -61,6 +61,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
       case 1 =>
         stateInflator.deflateState(editor)
       case _ =>
+        actionStates.last.undoable()
         actionStates = actionStates.dropRight(1)
         stateInflator.inflateState(actionStates.last, editor, this)
     }
@@ -71,7 +72,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
   }
 
   def handleSelect(string: String): Unit ={
-    if(isEnterKeypress(string)){return}
+    if(isEnterKeypress(string))return
     actionStates = actionStates ::: overlayStrategy.handleSelect(string, actionStates.last, editor)
     stateInflator.inflateState(actionStates.last, editor, this)
 
@@ -79,7 +80,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
 
   def handleSetSelecting(): Unit ={
     val currentState = actionStates.last
-    actionStates = actionStates ::: List(new PluginState(currentState.popup, currentState.markerList, currentState.selectedMarkers, true, currentState.listenerList))
+    actionStates = actionStates ::: List(new PluginState(currentState.popup, currentState.markerList, currentState.selectedMarkers, true, currentState.listenerList, () => Unit))
     stateInflator.inflateState(actionStates.last, editor, this)
   }
 
@@ -89,7 +90,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
     val markers = markerCalculatorStrategy.calculateMarkers(editor, string, currentCaretPosition).map(marker => Some(marker))
     val currentState = actionStates.last
 
-    actionStates = actionStates.dropRight(1) ::: List(new PluginState(new TextPopup(true, string), markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList))
+    actionStates = actionStates.dropRight(1) ::: List(new PluginState(new TextPopup(true, string, false), markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, () => Unit))
     stateInflator.inflateState(actionStates.last,editor, this)
   }
 
@@ -99,7 +100,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
 
     // TODO: getOrElse
     val markerList = currentState.markerList.filter(marker => marker.get.markerType == MarkerType.Secondary)
-    actionStates = actionStates.dropRight(1) ::: List(new PluginState(currentState.popup, markerList, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList))
+    actionStates = actionStates.dropRight(1) ::: List(new PluginState(currentState.popup, markerList, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, () => Unit))
     stateInflator.inflateState(actionStates.last,editor, this)
   }
 

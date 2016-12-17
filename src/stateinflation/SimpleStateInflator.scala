@@ -24,7 +24,11 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
     println("Inflating state")
     //create the popup
     state.popup.visible  match {
-      case true  => createPopup(state.popup.text, !state.isSelecting, editor, state.listenerList, action)
+      case true  =>
+        if(state.popup.recreate) {
+          disposePopup(editor)
+        }
+        createPopup(state.popup.text, !state.isSelecting, editor, state.listenerList, action)
       case false  => disposePopup(editor)
     }
 
@@ -111,7 +115,7 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
     }
     JBPopupFactory.getInstance().isChildPopupFocused(editor.getContentComponent) match {
       case true =>
-        // TODO: check wheter it is actually the correct popup
+        // TODO: check whether it is actually the correct popup
         updatePopup(text, editable)
       case false =>
         inflatePopup(text,editable,editor,listeners, action)
