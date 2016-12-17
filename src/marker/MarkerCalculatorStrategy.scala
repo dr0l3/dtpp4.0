@@ -9,13 +9,15 @@ import scala.collection.JavaConverters.asScalaBuffer
   * Created by runed on 11/27/2016.
   */
 trait MarkerCalculatorStrategy {
-  def calculateMarkers(editor: Editor, searchText: String, contextPoint: Int): List[Marker]
+  def calculateMarkers(editor: Editor, searchText: String, contextPoint: Int, excludeList: List[Marker]): List[Marker]
 }
 
 class SimpleMarkerCalculatorStrategy extends MarkerCalculatorStrategy{
   val markerset: String = "asdfwerhjkltcvbyuiopågæøxnmz".toUpperCase
 
-  override def calculateMarkers(editor: Editor, searchText: String, contextPoint: Int): List[Marker] = {
+  override def calculateMarkers(editor: Editor, searchText: String, contextPoint: Int, excludeList: List[Marker]): List[Marker] = {
+    print("ExcludeList: ")
+    println(excludeList)
     if(searchText.equals("")) return List()
 
     var markerList = getOffsets(EditorUtil.getMatchesForStringInTextRange, searchText, editor, EditorUtil.getVisibleTextRange(editor))
@@ -27,9 +29,12 @@ class SimpleMarkerCalculatorStrategy extends MarkerCalculatorStrategy{
 
     markerList = markerList.sortWith((marker1, marker2) => math.abs(marker1.startOffset - contextPoint) < math.abs(marker2.startOffset - contextPoint))
     val primaryMarkers = markerset.dropRight(1).iterator
-    markerList.map(marker =>
-      if (primaryMarkers.hasNext) new DtppMarker(marker.searchText, primaryMarkers.next().toString, marker.startOffset, marker.endOffset, MarkerType.Primary)
-      else new DtppMarker(marker.searchText, markerset.takeRight(1), marker.startOffset, marker.endOffset, MarkerType.Secondary))
+    markerList
+      .filter( marker => !excludeList.map(excluded => excluded.startOffset).contains(marker.startOffset))
+      .map(marker =>
+        if (primaryMarkers.hasNext) new DtppMarker(marker.searchText, primaryMarkers.next().toString, marker.startOffset, marker.endOffset, MarkerType.Primary)
+        else new DtppMarker(marker.searchText, markerset.takeRight(1), marker.startOffset, marker.endOffset, MarkerType.Secondary))
+
     // TODO: Complete this
 
   }

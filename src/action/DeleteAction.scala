@@ -11,7 +11,7 @@ import stateinflation.SimpleStateInflator
 /**
   * Created by runed on 12/17/2016.
   */
-class CutAction extends AnAction{
+class DeleteAction extends AnAction{
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
     val editor = anActionEvent.getData(CommonDataKeys.EDITOR)
     new ActionExample(
@@ -19,7 +19,7 @@ class CutAction extends AnAction{
       new SimpleStateInflator(new PluginState(), editor),
       TwoOverlayStrategy(
         TwoOffsetStringUndoFuncCreator(
-          (startOffset: Int, endOffset: Int, editor: Editor) => EditorUtil.performCut(startOffset,endOffset,editor),
+          (startOffset: Int, endOffset: Int, editor: Editor) => EditorUtil.performDelete(startOffset,endOffset,editor),
           OverlayStrategy.minOfSelectedMarkers,
           (startOffset: Int, endOffset: Int, editor: Editor) => EditorUtil.getTextBetweenOffsets(startOffset,endOffset,editor),
           (offset: Int, text: String, editor: Editor) => () => EditorUtil.performPaste(offset, editor, text))),

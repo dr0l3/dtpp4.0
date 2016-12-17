@@ -38,6 +38,10 @@
       <keyboard-shortcut first-keystroke="ctrl g" keymap="ctrl x"/>
     </action>
 
+    <action class="action.DeleteAction" id="deleteBetweenStuffScala">
+      <keyboard-shortcut first-keystroke="ctrl g" keymap="ctrl d"/>
+    </action>
+
   </actions>
 
 </idea-plugin>

@@ -1,10 +1,10 @@
 package action
 
-import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKeys}
+import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent}
 import com.intellij.openapi.editor.Editor
 import listener.ScrollDirection.ScrollDirection
 import listener._
-import marker.{DtppMarker, Marker, MarkerCalculatorStrategy, MarkerType}
+import marker.{Marker, MarkerCalculatorStrategy, MarkerType}
 import overlay.OverlayStrategy
 import popup.TextPopup
 import state.PluginState
@@ -23,10 +23,16 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
   }
 
   def handleInput(input: Input): Unit = {
+    if(input.inputType == InputType.Char && actionStates.last.markerList.nonEmpty &&actionStates.last.markerList.head.isDefined && input.value.get == actionStates.last.markerList.head.get.searchText){
+      println("Duplicate input detected")
+      return
+    }
+    print("dispatching input")
+    println(input.inputType + " " + input.value + " " + input.modifiers)
     if(actionStates.last.listenerList.map(ld => ld.listenerType).contains(ListenerType.NonAccept) && input.inputType != InputType.Escape){
       handleExitAction()
+      return
     }
-    // TODO: DispatchStrategy
     input.inputType match {
       case InputType.Enter =>
         if(actionStates.last.isSelecting){handleWidenMarkerNet()}
@@ -57,6 +63,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
   }
 
   def handleUndo(): Unit = {
+    println("Detecting regret")
     actionStates.length match {
       case 1 =>
         stateInflator.deflateState(editor)
@@ -87,7 +94,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
   def handleUpdateMarkers(string: String): Unit ={
     //calculate new markers
     val currentCaretPosition = editor.getCaretModel.getPrimaryCaret.getOffset
-    val markers = markerCalculatorStrategy.calculateMarkers(editor, string, currentCaretPosition).map(marker => Some(marker))
+    val markers = markerCalculatorStrategy.calculateMarkers(editor, string, currentCaretPosition, actionStates.last.selectedMarkers.map(marker => marker.get)).map(marker => Some(marker))
     val currentState = actionStates.last
 
     actionStates = actionStates.dropRight(1) ::: List(new PluginState(new TextPopup(true, string, false), markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, () => Unit))

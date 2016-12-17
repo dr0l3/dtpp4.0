@@ -32,7 +32,7 @@ class IndividualMarkerPainter{
     }
   }
 
-  def drawMarkerChar(editor: Editor, marker: Marker, textColor: JBColor, markerPanel: JComponent, graphics: Graphics): Unit = {
+  def drawMarkerChar(editor: Editor, marker: Marker, textColor: JBColor, markerPanel: JComponent, graphics: Graphics, stringFunc: (Marker) => String): Unit = {
     val markerPanel = editor.getContentComponent
     val font = editor.getColorsScheme.getFont(EditorFontType.BOLD)
     val x = markerPanel.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
@@ -40,6 +40,20 @@ class IndividualMarkerPainter{
     val bottomYOfMarkerChar = y + font.getSize
     graphics.setColor(textColor)
     graphics.setFont(font)
-    graphics.drawString(marker.replacementText, x.toInt, bottomYOfMarkerChar.toInt)
+    graphics.drawString(stringFunc(marker), x.toInt, bottomYOfMarkerChar.toInt)
+  }
+
+  def drawSelectedChar(editor: Editor, marker: Marker,backgroundColor: JBColor, textColor: JBColor, markerPanel: JComponent, graphics: Graphics): Unit ={
+    val markerPanel = editor.getContentComponent
+    val font = editor.getColorsScheme.getFont(EditorFontType.BOLD)
+    val x = markerPanel.getX + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset)).getX
+    val y = markerPanel.getY + editor.logicalPositionToXY(editor.offsetToLogicalPosition(marker.startOffset+1)).getY
+    val bottomYOfMarkerChar = y + font.getSize
+    graphics.setFont(font)
+    val fontRect: Rectangle2D = markerPanel.getFontMetrics(font).getStringBounds(marker.searchText.charAt(0).toString, graphics)
+    graphics.setColor(backgroundColor)
+    graphics.fillRect(x.toInt,y.toInt,fontRect.getWidth.toInt, fontRect.getHeight.toInt)
+    graphics.setColor(textColor)
+    graphics.drawString(marker.searchText.charAt(0).toString, x.toInt, bottomYOfMarkerChar.toInt)
   }
 }

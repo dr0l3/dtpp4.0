@@ -3,7 +3,7 @@ package stateinflation
 import java.awt.{Graphics, Rectangle}
 import javax.swing.{JComponent, JPanel, JTextField}
 
-import action.{ActionExample, DummyInputAcceptor, InputAcceptor}
+import action.{DummyInputAcceptor, InputAcceptor}
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import listener._
@@ -53,7 +53,9 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
     val individualMarkerPainter = new IndividualMarkerPainter()
     // TODO: Constructor parameter
     val markerPaintStrategy = new SimpleMarkerPaintStrategy()
-    markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor, individualMarkerPainter, this, graphics)
+    if(!currentState.listenerList.exists(desc => desc.listenerType == ListenerType.NonAccept)){
+      markerPaintStrategy.paintMarkers(currentState.markerList ::: currentState.selectedMarkers, editor, individualMarkerPainter, this, graphics)
+    }
   }
 
   override def update(g: Graphics): Unit = {

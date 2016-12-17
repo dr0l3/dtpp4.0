@@ -15,7 +15,7 @@ class SimpleMarkerPaintStrategy extends MarkerPaintStrategy {
     val markers = prepareMarkers(markerCandidates, editor)
     markers.foreach(marker => marker.markerType match {
       case MarkerType.Primary => paintMarker(marker, editor, backgroundColor = JBColor.GRAY, textColor = JBColor.WHITE, replacementTextColor = JBColor.RED, markerPainter, markerPanel, graphics)
-      case MarkerType.Selected => paintMarker(marker, editor, backgroundColor = JBColor.BLUE, textColor = JBColor.WHITE, replacementTextColor = JBColor.RED, markerPainter, markerPanel, graphics)
+      case MarkerType.Selected => paintSelectedMarker(marker, editor, backgroundColor = JBColor.BLACK, textColor = JBColor.WHITE, markerPainter, markerPanel, graphics)
       case MarkerType.Secondary => paintMarker(marker, editor, backgroundColor = JBColor.GRAY, textColor = JBColor.WHITE, replacementTextColor = JBColor.YELLOW, markerPainter, markerPanel, graphics)
     })
   }
@@ -28,6 +28,10 @@ class SimpleMarkerPaintStrategy extends MarkerPaintStrategy {
 
   private def paintMarker(marker: Marker, editor: Editor, backgroundColor: JBColor, textColor: JBColor, replacementTextColor: JBColor, markerPainter: IndividualMarkerPainter, markerPanel: JComponent, graphics: Graphics): Unit ={
     markerPainter.drawBackground(editor, backgroundColor, textColor, marker, markerPanel, graphics)
-    markerPainter.drawMarkerChar(editor, marker, replacementTextColor, markerPanel, graphics)
+    markerPainter.drawMarkerChar(editor, marker, replacementTextColor, markerPanel, graphics, (m: Marker) => m.replacementText)
+  }
+
+  private def paintSelectedMarker(marker: Marker, editor: Editor, backgroundColor: JBColor, textColor: JBColor, markerPainter: IndividualMarkerPainter, markerPanel: JComponent, graphics: Graphics): Unit ={
+    markerPainter.drawSelectedChar(editor, marker, backgroundColor, textColor, markerPanel, graphics)
   }
 }

@@ -23,7 +23,11 @@ public class EditorUtil {
     }
 
     public static String getTextBetweenOffsets(int startOffset, int endOffset, Editor editor){
-        return editor.getDocument().getText(new TextRange(startOffset, endOffset));
+        if(startOffset < endOffset){
+            return editor.getDocument().getText(new TextRange(startOffset, endOffset));
+        } else {
+            return editor.getDocument().getText(new TextRange(endOffset, startOffset));
+        }
     }
 
     public static void performScrollByLinenumber(Editor editor, int linesToMove){
@@ -103,8 +107,14 @@ public class EditorUtil {
     }
 
     public static void performCut(int startOffset, int endOffset, Editor editor){
-        performCopy(startOffset,endOffset,editor);
-        performDelete(startOffset,endOffset,editor);
+        if(startOffset < endOffset){
+            performCopy(startOffset,endOffset,editor);
+            performDelete(startOffset,endOffset,editor);
+        } else {
+            performCopy(endOffset,startOffset,editor);
+            performDelete(endOffset,startOffset,editor);
+        }
+
     }
 
     public static String performCutWithReturn(int startOffset, int endOffset, Editor editor){
