@@ -24,31 +24,25 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
   def inflateState(state: PluginState, editor: Editor, action: InputAcceptor): Unit = {
     println("Inflating state")
     //create the popup
-    state.popup.visible  match {
-      case true  =>
-        if(state.popup.recreate) {
-          disposePopup(editor)
-        }
-        createPopup(state.popup.text, !state.isSelecting, editor, state.listenerList, action)
-      case false  => disposePopup(editor)
+    if (state.popup.visible) {
+      if (state.popup.recreate) {
+        disposePopup(editor)
+      }
+      createPopup(state.popup.text, !state.isSelecting, editor, state.listenerList, action)
+    } else {
+      disposePopup(editor)
     }
 
     if(state.listenerList.map(ld => ld.listenerType).contains(ListenerType.NonAccept)){
       new NonAccept(action, editor).register()
     }
 
-    println(state.contextPoint)
-    println(EditorUtil.getMinVisibleOffset(editor))
-    println(EditorUtil.getMaxVisibleOffset(editor))
-
     if(state.contextPoint < EditorUtil.getMinVisibleOffset(editor) || state.contextPoint > EditorUtil.getMaxVisibleOffset(editor)){
-      println("Scrolling to positition")
       EditorUtil.performScrollToPosition(editor, state.contextPoint)
     }
 
     currentState = state
     if(!addedToComponent){
-      println("adding stuff to component")
       editor.getContentComponent.add(this)
       addedToComponent = true
       paint(editor.getContentComponent.getGraphics)
@@ -125,12 +119,10 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
       popup.show(position)
       textField.requestFocus()
     }
-    JBPopupFactory.getInstance().isChildPopupFocused(editor.getContentComponent) match {
-      case true =>
-        // TODO: check whether it is actually the correct popup
-        updatePopup(text, editable)
-      case false =>
-        inflatePopup(text,editable,editor,listeners, action)
+    if (JBPopupFactory.getInstance().isChildPopupFocused(editor.getContentComponent)) {
+      updatePopup(text, editable)
+    } else {
+      inflatePopup(text, editable, editor, listeners, action)
     }
   }
 

@@ -54,6 +54,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
   def calculateStartState(selectedMarker : Option[Marker]): Unit = {
     val contextPoint = editor.getCaretModel.getPrimaryCaret.getOffset
     if(actionStates.isEmpty){
+      // TODO: Maybe we can pass in an already existing popup
       actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), List[Option[Marker]](), false, List[ListenerDescription](), contextPoint, () => Unit))
     } else {
       actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), actionStates.last.selectedMarkers ::: List[Option[Marker]](), false, List[ListenerDescription](), contextPoint, () => Unit))

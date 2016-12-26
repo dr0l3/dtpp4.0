@@ -14,43 +14,37 @@ import state.PluginState
 class ScrollStrategy{
   def calculateScroll(state: PluginState, editor: Editor, direction: ScrollDirection): PluginState = {
     def calculateScrollInner(state: PluginState, dirFunc: (Marker) => Boolean, sortFunc: (Marker) => Int): PluginState = {
-      val secMrkrs: List[Marker] = state.markerList
-        .filter(opt => opt.get.markerType == MarkerType.Secondary).map(opt => opt.get)
-      val dirMrkrs: List[Marker] = secMrkrs.filter(dirFunc)
-      val visMrkrs: List[Marker] = dirMrkrs.filter(marker => Marker.isVisible(marker, editor))
-      //if any of these left scroll to the furthest one
-      visMrkrs.size match {
-        case 0 => // scroll so that no marker is skipped
-          val allMrkrs = Marker.getMrkrs(EditorUtil.getMatchesForStringInTextRange, state.markerList.head.get.searchText, editor, EditorUtil.getEntireDocumentTextRange(editor))
-          val dirMrkrs = allMrkrs.filter(dirFunc)
-          val nonVisMrkrs = dirMrkrs.filter(!Marker.isVisible(_, editor))
-          val sortedMarkers = nonVisMrkrs.sortBy(sortFunc)
-          if(sortedMarkers.isEmpty) state
-          else {
-            val markers = Marker.assignMarkerChar(Marker.markerset, sortedMarkers)
-            new PluginState(state.popup, markers.map(m => Some(m)), state.selectedMarkers, state.isSelecting, state.listenerList, sortedMarkers.head.startOffset, createUndoFunction(editor))
-          }
+      val visSecMarkers = state.markerList
+        .filter(_.get.markerType == MarkerType.Secondary)
+        .map(_.get)
+        .filter(dirFunc)
+        .filter(Marker.isVisible(_, editor))
+      val mrkrs = visSecMarkers.size match {
+        case 0 =>
+          Marker.getMrkrs(EditorUtil.getMatchesForStringInTextRange, state.markerList.head.get.searchText, editor, EditorUtil.getEntireDocumentTextRange(editor))
+            .filter(dirFunc)
+            .filter(!Marker.isVisible(_, editor))
+            .sortBy(sortFunc)
         case _ =>
-          //calculate new markers
-          val dirMrkrs = state.markerList.map(m => m.get).filter(dirFunc)
-          val noPriMrkrs = dirMrkrs.filter(m => m.markerType != MarkerType.Primary)
-          val sortedMarkers = noPriMrkrs.sortBy(sortFunc)
-          if(sortedMarkers.isEmpty) state
-          else {
-            val markers = Marker.assignMarkerChar(Marker.markerset, sortedMarkers)
-            new PluginState(state.popup, markers.map(m => Some(m)), state.selectedMarkers, state.isSelecting, state.listenerList, sortedMarkers.head.startOffset, createUndoFunction(editor))
-          }
+          state.markerList.map(m => m.get).filter(dirFunc)
+            .filter(_.markerType != MarkerType.Primary)
+            .sortBy(sortFunc)
+      }
+      if(mrkrs.isEmpty) state
+      else {
+        val markers = Marker.assignMarkerChar(Marker.markerset, mrkrs)
+        new PluginState(state.popup, markers.map(m => Some(m)), state.selectedMarkers, state.isSelecting, state.listenerList, mrkrs.head.startOffset, createUndoFunction(editor))
       }
     }
 
     if(direction == ScrollDirection.Up){
       calculateScrollInner(state,
-        (mrkr) => mrkr.startOffset < state.contextPoint,
-        (mrkr) => Math.abs(mrkr.startOffset-state.contextPoint))
+        mrkr => mrkr.startOffset < state.contextPoint,
+        mrkr => Math.abs(mrkr.startOffset-state.contextPoint))
     } else {
       calculateScrollInner(state,
-        (mrkr) => mrkr.startOffset > state.contextPoint,
-        (mrkr) => Math.abs(mrkr.startOffset-state.contextPoint))
+        mrkr => mrkr.startOffset > state.contextPoint,
+        mrkr => Math.abs(mrkr.startOffset-state.contextPoint))
     }
   }
 
