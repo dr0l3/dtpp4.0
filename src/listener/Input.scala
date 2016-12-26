@@ -22,4 +22,8 @@ object Modifier extends Enumeration{
 object ScrollDirection extends Enumeration{
   type ScrollDirection = Value
   val Up, Down = Value
+
+  def charToDir(input: Input): ScrollDirection = {
+    if(input.value.get == "k") ScrollDirection.Down else ScrollDirection.Up
+  }
 }

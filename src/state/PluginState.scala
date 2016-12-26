@@ -12,6 +12,7 @@ class PluginState (val popup: TextPopup                         = new TextPopup(
                    val selectedMarkers: List[Option[Marker]]    = List(),
                    val isSelecting: Boolean                     = false,
                    val listenerList: List[ListenerDescription]  = List(),
+                   val contextPoint: Int                        = 0,
                    val undoable: () => Unit                     = () => Unit){
 
 }

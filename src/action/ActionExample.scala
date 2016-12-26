@@ -7,20 +7,22 @@ import listener._
 import marker.{Marker, MarkerCalculatorStrategy, MarkerType}
 import overlay.OverlayStrategy
 import popup.TextPopup
+import scoll.ScrollStrategy
 import state.PluginState
 import stateinflation.SimpleStateInflator
 
 /**
   * Created by runed on 11/25/2016.
   */
-class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, val overlayStrategy: OverlayStrategy, val markerCalculatorStrategy: MarkerCalculatorStrategy) extends AnAction with InputAcceptor{
-  var actionStates : List[PluginState] = List[PluginState]()
+class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, val overlayStrategy: OverlayStrategy, val markerCalculatorStrategy: MarkerCalculatorStrategy, val scrollStrategy: ScrollStrategy) extends AnAction with InputAcceptor{
+  var actionStates : List[PluginState] = Nil
 
   override def actionPerformed(anActionEvent: AnActionEvent): Unit = {
     // TODO: create listeners
     println("Starting action")
     calculateStartState(None)
   }
+
 
   def handleInput(input: Input): Unit = {
     if(input.inputType == InputType.Char && actionStates.last.markerList.nonEmpty &&actionStates.last.markerList.head.isDefined && input.value.get == actionStates.last.markerList.head.get.searchText){
@@ -44,15 +46,17 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
         if(actionStates.last.isSelecting){handleSelect(input.value.getOrElse(return))}
         else {handleUpdateMarkers(input.value.getOrElse(return))}
       case InputType.Scroll =>
-        handleScroll(ScrollDirection.Down)
+        val direction = ScrollDirection.charToDir(input)
+        handleScroll(direction)
     }
   }
 
   def calculateStartState(selectedMarker : Option[Marker]): Unit = {
+    val contextPoint = editor.getCaretModel.getPrimaryCaret.getOffset
     if(actionStates.isEmpty){
-      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), List[Option[Marker]](), false, List[ListenerDescription](), () => Unit))
+      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), List[Option[Marker]](), false, List[ListenerDescription](), contextPoint, () => Unit))
     } else {
-      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), actionStates.last.selectedMarkers ::: List[Option[Marker]](), false, List[ListenerDescription](), () => Unit))
+      actionStates = actionStates ::: List(new PluginState(new TextPopup(true, "", false),List[Option[Marker]](), actionStates.last.selectedMarkers ::: List[Option[Marker]](), false, List[ListenerDescription](), contextPoint, () => Unit))
     }
     stateInflator.inflateState(actionStates.last, editor, this)
   }
@@ -66,6 +70,7 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
     println("Detecting regret")
     actionStates.length match {
       case 1 =>
+        actionStates.last.undoable()
         stateInflator.deflateState(editor)
       case _ =>
         actionStates.last.undoable()
@@ -87,17 +92,15 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
 
   def handleSetSelecting(): Unit ={
     val currentState = actionStates.last
-    actionStates = actionStates ::: List(new PluginState(currentState.popup, currentState.markerList, currentState.selectedMarkers, true, currentState.listenerList, () => Unit))
+    actionStates = actionStates ::: List(new PluginState(currentState.popup, currentState.markerList, currentState.selectedMarkers, true, currentState.listenerList, currentState.contextPoint, () => Unit))
     stateInflator.inflateState(actionStates.last, editor, this)
   }
 
   def handleUpdateMarkers(string: String): Unit ={
     //calculate new markers
-    val currentCaretPosition = editor.getCaretModel.getPrimaryCaret.getOffset
-    val markers = markerCalculatorStrategy.calculateMarkers(editor, string, currentCaretPosition, actionStates.last.selectedMarkers.map(marker => marker.get)).map(marker => Some(marker))
-    val currentState = actionStates.last
+    val mr = markerCalculatorStrategy.calculateMarkersv2(editor, string, actionStates.last, actionStates.last.selectedMarkers.map(m => m.get))
 
-    actionStates = actionStates.dropRight(1) ::: List(new PluginState(new TextPopup(true, string, false), markers, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, () => Unit))
+    actionStates = actionStates.dropRight(1) ::: List(mr)
     stateInflator.inflateState(actionStates.last,editor, this)
   }
 
@@ -107,12 +110,13 @@ class ActionExample(val editor: Editor, val stateInflator: SimpleStateInflator, 
 
     // TODO: getOrElse
     val markerList = currentState.markerList.filter(marker => marker.get.markerType == MarkerType.Secondary)
-    actionStates = actionStates.dropRight(1) ::: List(new PluginState(currentState.popup, markerList, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, () => Unit))
+    actionStates = actionStates.dropRight(1) ::: List(new PluginState(currentState.popup, markerList, currentState.selectedMarkers, currentState.isSelecting, currentState.listenerList, currentState.contextPoint, () => Unit))
     stateInflator.inflateState(actionStates.last,editor, this)
   }
 
   def handleScroll(direction: ScrollDirection): Unit ={
-    //calculate scroll
-    //repaint markers
+    println("scrolling")
+    actionStates = actionStates.dropRight(1) ::: List(scrollStrategy.calculateScroll(actionStates.last, editor, direction))
+    stateInflator.inflateState(actionStates.last, editor, this)
   }
 }

@@ -24,7 +24,6 @@ object OverlayStrategy{
 }
 
 trait actionPerformer {
-
   def selectedMarkerOf(matchedMarker: Marker): Marker = {
     new DtppMarker(matchedMarker.searchText, matchedMarker.replacementText, matchedMarker.startOffset, matchedMarker.endOffset, MarkerType.Selected)
   }
@@ -34,12 +33,12 @@ trait actionPerformer {
       case SingleOffsetUndoFuncCreator(action, offsetFunc, undoFunc) =>
         val undoOffset = offsetFunc(editor)
         action(matchedMarker.startOffset, editor)
-        List(new PluginState(new TextPopup(false, "", false), List(), state.selectedMarkers ::: List(Some(selectedMarkerOf(matchedMarker))), false, List(new SimpleListenerDescription(ListenerType.NonAccept)), undoFunc(undoOffset, editor)))
+        List(new PluginState(new TextPopup(false, "", false), List(), state.selectedMarkers ::: List(Some(selectedMarkerOf(matchedMarker))), false, List(new SimpleListenerDescription(ListenerType.NonAccept)), state.contextPoint, undoFunc(undoOffset, editor)))
       case TwoOffsetStringUndoFuncCreator(action, offsetFunc, valueFunc, undoFunc) =>
         val undoOffset = offsetFunc(state, matchedMarker)
         val text = valueFunc(state.selectedMarkers.head.get.startOffset, matchedMarker.startOffset, editor)
         action(state.selectedMarkers.head.get.startOffset, matchedMarker.startOffset, editor)
-        List(new PluginState(new TextPopup(false, "", false), List(), state.selectedMarkers ::: List(Some(selectedMarkerOf(matchedMarker))), false, List(new SimpleListenerDescription(ListenerType.NonAccept)), undoFunc(undoOffset, text, editor)))
+        List(new PluginState(new TextPopup(false, "", false), List(), state.selectedMarkers ::: List(Some(selectedMarkerOf(matchedMarker))), false, List(new SimpleListenerDescription(ListenerType.NonAccept)), state.contextPoint,undoFunc(undoOffset, text, editor)))
     }
   }
 }
@@ -67,7 +66,7 @@ case class TwoOverlayStrategy(undoFunctionCreator: UndoFunctionCreator) extends 
       return Nil
     }
     state.selectedMarkers.size match { //size 0 -> first overlay. size 1 -> second overlay
-      case 0 => List(new PluginState(new TextPopup(true, "", true), Nil, List(Some(selectedMarkerOf(matchedMarkers.head.get))), false, Nil, () => Unit))
+      case 0 => List(new PluginState(new TextPopup(true, "", true), Nil, List(Some(selectedMarkerOf(matchedMarkers.head.get))), false, Nil, state.contextPoint, () => Unit))
       case _ =>
         matchedMarkers.size match {
           case 0 =>

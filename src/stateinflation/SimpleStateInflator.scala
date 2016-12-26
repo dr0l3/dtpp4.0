@@ -3,6 +3,7 @@ package stateinflation
 import java.awt.{Graphics, Rectangle}
 import javax.swing.{JComponent, JPanel, JTextField}
 
+import Util.EditorUtil
 import action.{DummyInputAcceptor, InputAcceptor}
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -34,6 +35,15 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
 
     if(state.listenerList.map(ld => ld.listenerType).contains(ListenerType.NonAccept)){
       new NonAccept(action, editor).register()
+    }
+
+    println(state.contextPoint)
+    println(EditorUtil.getMinVisibleOffset(editor))
+    println(EditorUtil.getMaxVisibleOffset(editor))
+
+    if(state.contextPoint < EditorUtil.getMinVisibleOffset(editor) || state.contextPoint > EditorUtil.getMaxVisibleOffset(editor)){
+      println("Scrolling to positition")
+      EditorUtil.performScrollToPosition(editor, state.contextPoint)
     }
 
     currentState = state
@@ -133,6 +143,10 @@ class SimpleStateInflator(var currentState: PluginState, val editor: Editor) ext
     editor.getContentComponent.remove(this)
     addedToComponent = false
     val popups = asScalaBuffer(JBPopupFactory.getInstance().getChildPopups(editor.getContentComponent))
+    updateListener.unregister()
+    selectListener.unregister()
     popups.foreach(popup => popup.dispose())
+    currentState = new PluginState(currentState.popup, Nil, Nil, currentState.isSelecting, currentState.listenerList, currentState.contextPoint)
+    paint(editor.getContentComponent.getGraphics)
   }
 }

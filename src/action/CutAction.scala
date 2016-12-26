@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKey
 import com.intellij.openapi.editor.Editor
 import marker.SimpleMarkerCalculatorStrategy
 import overlay.{OverlayStrategy, TwoOffsetStringUndoFuncCreator, TwoOverlayStrategy}
+import scoll.ScrollStrategy
 import state.PluginState
 import stateinflation.SimpleStateInflator
 
@@ -23,7 +24,8 @@ class CutAction extends AnAction{
           OverlayStrategy.minOfSelectedMarkers,
           (startOffset: Int, endOffset: Int, editor: Editor) => EditorUtil.getTextBetweenOffsets(startOffset,endOffset,editor),
           (offset: Int, text: String, editor: Editor) => () => EditorUtil.performPaste(offset, editor, text))),
-      new SimpleMarkerCalculatorStrategy)
+      new SimpleMarkerCalculatorStrategy,
+      new ScrollStrategy)
       .actionPerformed(anActionEvent)
   }
 }

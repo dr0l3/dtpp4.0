@@ -183,6 +183,24 @@ public class EditorUtil {
         return new TextRange(editor.logicalPositionToOffset(startLogicalPosition), editor.logicalPositionToOffset(endLogicalPosition));
     }
 
+    public static TextRange getEntireDocumentTextRange(Editor editor){
+        return new TextRange(0, editor.getDocument().getTextLength());
+    }
+
+    public static int getMinVisibleOffset(Editor editor){
+        Rectangle visibleArea = editor.getScrollingModel().getVisibleArea();
+        LogicalPosition startLogicalPosition = editor.xyToLogicalPosition(visibleArea.getLocation());
+        return editor.logicalPositionToOffset(startLogicalPosition);
+    }
+
+    public static int getMaxVisibleOffset(Editor editor){
+        Rectangle visibleArea = editor.getScrollingModel().getVisibleArea();
+        Double endVisualX = visibleArea.getX() + visibleArea.getWidth();
+        Double endVisualY = visibleArea.getY() + visibleArea.getHeight();
+        LogicalPosition endLogicalPosition = editor.xyToLogicalPosition(new Point(endVisualX.intValue(), endVisualY.intValue()));
+        return editor.logicalPositionToOffset(endLogicalPosition);
+    }
+
     public static ArrayList<Integer> getMatchesForStringInTextRange(String searchString, Editor editor, TextRange textRange) {
         Document document = editor.getDocument();
         ArrayList<Integer> offsets = new ArrayList<>();

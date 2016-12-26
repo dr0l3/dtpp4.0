@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.{AnAction, AnActionEvent, CommonDataKey
 import com.intellij.openapi.editor.Editor
 import marker.SimpleMarkerCalculatorStrategy
 import overlay.{OneOverlayStrategy, SingleOffsetUndoFuncCreator}
+import scoll.ScrollStrategy
 import state.PluginState
 import stateinflation.SimpleStateInflator
 
@@ -22,7 +23,8 @@ class JumpAction extends AnAction{
           (offset: Int, editor: Editor) => EditorUtil.performMove(offset,editor),
           (editor: Editor) => EditorUtil.getCurrentPosition(editor),
           (offset: Int, editor: Editor) => () => EditorUtil.performMove(offset, editor))),
-      new SimpleMarkerCalculatorStrategy)
+      new SimpleMarkerCalculatorStrategy,
+      new ScrollStrategy)
       .actionPerformed(anActionEvent)
   }
 }
